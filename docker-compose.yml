@@ -60,8 +60,7 @@ services:
       - ./logs:/app/logs
     working_dir: /app
     command: >
-      sh -c "pip install --quiet pandas sqlalchemy psycopg2-binary openpyxl
-             && python etl_pipeline.py"
+      sh -c "pip install --quiet pandas sqlalchemy psycopg2-binary openpyxl && python etl_pipeline.py"
 
 volumes:
   postgres_data:

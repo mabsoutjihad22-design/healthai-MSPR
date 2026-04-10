@@ -1,0 +1,23 @@
+[
+  {
+    "dataset": "nutrition_cleaned.csv",
+    "lignes_source": 597,
+    "lignes_inserees": 593,
+    "statut": "succes"
+  },
+  {
+    "dataset": "ETL 2 - Utilisateurs",
+    "statut": "erreur",
+    "message": "sqlalchemy.cyextension.immutabledict.immutabledict is not a sequence"
+  },
+  {
+    "dataset": "ExerciseDB API",
+    "statut": "erreur",
+    "message": "404 Client Error: Not Found for url: https://exercisedb.dev/api/exercises?limit=100&offset=0"
+  },
+  {
+    "dataset": "ETL 4 - Fitness Tracker",
+    "statut": "erreur",
+    "message": "sqlalchemy.cyextension.immutabledict.immutabledict is not a sequence"
+  }
+]

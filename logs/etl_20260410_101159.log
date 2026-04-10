@@ -1,0 +1,28 @@
+2026-04-10 10:11:59 | INFO     | Pipeline ETL HealthAI Coach v5.0 — demarrage
+2026-04-10 10:11:59 | INFO     | Source exercices : RapidAPI ExerciseDB (exercisedb.p.rapidapi.com)
+2026-04-10 10:11:59 | INFO     | Connexion PostgreSQL OK.
+2026-04-10 10:11:59 | INFO     | ==================================================
+2026-04-10 10:11:59 | INFO     | ETL 1 — Aliments (nutrition_cleaned.csv)
+2026-04-10 10:11:59 | INFO     | Lu : nutrition_cleaned.csv (597 lignes)
+2026-04-10 10:11:59 | INFO     | [aliment] 593 lignes inserees.
+2026-04-10 10:11:59 | INFO     | ETL 1 - Aliments -> succes
+2026-04-10 10:11:59 | INFO     | ==================================================
+2026-04-10 10:11:59 | INFO     | ETL 2 — Utilisateurs + Metriques (gym_cleaned.csv)
+2026-04-10 10:11:59 | INFO     | Lu : gym_cleaned.csv (966 lignes)
+2026-04-10 10:11:59 | INFO     | [utilisateur] 966 lignes inserees.
+2026-04-10 10:12:04 | INFO     | [metrique_quotidienne] 28980 lignes inserees.
+2026-04-10 10:12:04 | INFO     | ETL 2 - Utilisateurs -> succes
+2026-04-10 10:12:04 | INFO     | ==================================================
+2026-04-10 10:12:04 | INFO     | ETL 3 — Exercices (RapidAPI ExerciseDB)
+2026-04-10 10:12:04 | INFO     | Appel RapidAPI : https://exercisedb.p.rapidapi.com/exercises?limit=100&offset=0
+2026-04-10 10:12:04 | INFO     | RapidAPI OK — 10 exercices recus
+2026-04-10 10:12:04 | INFO     | Colonnes recues de l'API : ['bodyPart', 'equipment', 'id', 'name', 'target', 'secondaryMuscles', 'instructions', 'description', 'difficulty', 'category']
+2026-04-10 10:12:04 | INFO     | [exercice] 10 lignes inserees.
+2026-04-10 10:12:04 | INFO     | ETL 3 - Exercices API -> succes
+2026-04-10 10:12:04 | INFO     | ==================================================
+2026-04-10 10:12:04 | INFO     | ETL 4 — Fitness Tracker (fitness_cleaned.csv)
+2026-04-10 10:12:04 | INFO     | Lu : fitness_cleaned.csv (500 lignes)
+2026-04-10 10:12:05 | INFO     | [metrique_quotidienne] 500 lignes inserees.
+2026-04-10 10:12:05 | INFO     | ETL 4 - Fitness Tracker -> succes
+2026-04-10 10:12:05 | INFO     | Rapport qualite : logs\rapport_qualite_20260410_101205.json
+2026-04-10 10:12:05 | INFO     | Pipeline termine en 6.1s — 4/4 ETL OK

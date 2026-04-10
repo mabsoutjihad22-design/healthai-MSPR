@@ -1,0 +1,64 @@
+[
+  {
+    "dataset": "aliments_brut",
+    "nb_lignes": 10,
+    "nb_colonnes": 7,
+    "valeurs_nulles": {
+      "nom": 0,
+      "categorie": 0,
+      "calories_100g": 0,
+      "proteines_g": 0,
+      "glucides_g": 0,
+      "lipides_g": 0,
+      "fibres_g": 0
+    },
+    "doublons": 0,
+    "types": {
+      "nom": "str",
+      "categorie": "str",
+      "calories_100g": "int64",
+      "proteines_g": "float64",
+      "glucides_g": "float64",
+      "lipides_g": "float64",
+      "fibres_g": "float64"
+    },
+    "timestamp": "2026-04-08T13:25:27.815154",
+    "apres_nettoyage": 10,
+    "statut": "succès"
+  },
+  {
+    "dataset": "ETL 2 - Utilisateurs",
+    "statut": "erreur",
+    "message": "sqlalchemy.cyextension.immutabledict.immutabledict is not a sequence"
+  },
+  {
+    "dataset": "exercices_brut",
+    "nb_lignes": 10,
+    "nb_colonnes": 6,
+    "valeurs_nulles": {
+      "nom": 0,
+      "type": 0,
+      "niveau": 0,
+      "equipement": 0,
+      "muscle_principal": 0,
+      "instructions": 0
+    },
+    "doublons": 0,
+    "types": {
+      "nom": "str",
+      "type": "str",
+      "niveau": "str",
+      "equipement": "str",
+      "muscle_principal": "str",
+      "instructions": "str"
+    },
+    "timestamp": "2026-04-08T13:25:28.597475",
+    "exercices_inseres": 10,
+    "statut": "succès"
+  },
+  {
+    "dataset": "ETL 4 - Objectifs users",
+    "statut": "erreur",
+    "message": "sqlalchemy.cyextension.immutabledict.immutabledict is not a sequence"
+  }
+]

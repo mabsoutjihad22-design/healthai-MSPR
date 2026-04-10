@@ -1,0 +1,26 @@
+2026-04-10 09:57:21 | INFO     | Pipeline ETL HealthAI Coach v5.0 — demarrage
+2026-04-10 09:57:21 | INFO     | Source exercices : RapidAPI ExerciseDB (exercisedb.p.rapidapi.com)
+2026-04-10 09:57:22 | INFO     | Connexion PostgreSQL OK.
+2026-04-10 09:57:22 | INFO     | ==================================================
+2026-04-10 09:57:22 | INFO     | ETL 1 — Aliments (nutrition_cleaned.csv)
+2026-04-10 09:57:22 | INFO     | Lu : nutrition_cleaned.csv (597 lignes)
+2026-04-10 09:57:22 | INFO     | [aliment] 593 lignes inserees.
+2026-04-10 09:57:22 | INFO     | ETL 1 - Aliments -> succes
+2026-04-10 09:57:22 | INFO     | ==================================================
+2026-04-10 09:57:22 | INFO     | ETL 2 — Utilisateurs + Metriques (gym_cleaned.csv)
+2026-04-10 09:57:22 | INFO     | Lu : gym_cleaned.csv (966 lignes)
+2026-04-10 09:57:22 | INFO     | [utilisateur] 966 lignes inserees.
+2026-04-10 09:57:33 | INFO     | [metrique_quotidienne] 28980 lignes inserees.
+2026-04-10 09:57:33 | INFO     | ETL 2 - Utilisateurs -> succes
+2026-04-10 09:57:33 | INFO     | ==================================================
+2026-04-10 09:57:33 | INFO     | ETL 3 — Exercices (RapidAPI ExerciseDB)
+2026-04-10 09:57:33 | INFO     | Appel RapidAPI : https://exercisedb.p.rapidapi.com/exercises?limit=100&offset=0
+2026-04-10 09:57:34 | ERROR    | Erreur HTTP RapidAPI : 403 Client Error: Forbidden for url: https://exercisedb.p.rapidapi.com/exercises?limit=100&offset=0
+2026-04-10 09:57:34 | INFO     | ETL 3 - Exercices API -> erreur
+2026-04-10 09:57:34 | INFO     | ==================================================
+2026-04-10 09:57:34 | INFO     | ETL 4 — Fitness Tracker (fitness_cleaned.csv)
+2026-04-10 09:57:34 | INFO     | Lu : fitness_cleaned.csv (500 lignes)
+2026-04-10 09:57:34 | INFO     | [metrique_quotidienne] 500 lignes inserees.
+2026-04-10 09:57:34 | INFO     | ETL 4 - Fitness Tracker -> succes
+2026-04-10 09:57:34 | INFO     | Rapport qualite : logs\rapport_qualite_20260410_095734.json
+2026-04-10 09:57:34 | INFO     | Pipeline termine en 12.6s — 3/4 ETL OK

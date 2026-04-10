@@ -1,15 +1,23 @@
 """
 =============================================================
- HealthAI Coach — Pipeline ETL v4.0
+ HealthAI Coach — Pipeline ETL v5.0
 =============================================================
  Sources :
    - nutrition_cleaned.csv  -> table aliment
    - gym_cleaned.csv        -> tables utilisateur + metrique_quotidienne
    - fitness_cleaned.csv    -> table metrique_quotidienne
-   - exercises.json         -> tables exercice + exercice_muscle
+   - RapidAPI ExerciseDB    -> tables exercice + exercice_muscle
 =============================================================
  Lancement :
    pip install pandas sqlalchemy psycopg2-binary openpyxl requests
+   
+   Windows CMD :
+   set DB_HOST=127.0.0.1
+   set DB_NAME=healthai
+   set DB_USER=postgres
+   set DB_PASSWORD=postgres
+   set DATA_DIR=./data
+   set RAPIDAPI_KEY=e45408853cmshf699b5c6ab9114ap1b3194jsn8ed911d40811
    python etl_pipeline.py
 =============================================================
 """
@@ -28,6 +36,11 @@ DB_CONFIG = {
     "user":     os.getenv("DB_USER",     "postgres"),
     "password": os.getenv("DB_PASSWORD", "postgres"),
 }
+
+RAPIDAPI_KEY  = os.getenv("RAPIDAPI_KEY", "e45408853cmshf699b5c6ab9114ap1b3194jsn8ed911d40811")
+RAPIDAPI_HOST = "exercisedb.p.rapidapi.com"
+RAPIDAPI_URL  = "https://exercisedb.p.rapidapi.com/exercises"
+
 DATA_DIR = Path(os.getenv("DATA_DIR", "./data"))
 LOG_DIR  = Path("./logs")
 LOG_DIR.mkdir(exist_ok=True)
@@ -157,7 +170,6 @@ def etl_utilisateurs_metriques(engine):
 
     df_users = pd.DataFrame(utilisateurs)
 
-    # Eviter les doublons si on relance
     try:
         emails = lire_sql("SELECT email FROM utilisateur", engine)
         df_users = df_users[~df_users["email"].isin(emails["email"])]
@@ -166,7 +178,6 @@ def etl_utilisateurs_metriques(engine):
 
     nb_users = inserer(df_users, "utilisateur", engine)
 
-    # Recuperer les IDs
     df_ids = lire_sql(
         "SELECT id, email FROM utilisateur WHERE email LIKE 'user_%@healthai.demo' ORDER BY id",
         engine
@@ -176,7 +187,6 @@ def etl_utilisateurs_metriques(engine):
         logger.warning("Aucun utilisateur trouve pour les metriques.")
         return {"dataset": "gym_cleaned.csv", "utilisateurs": nb_users, "metriques": 0, "statut": "succes"}
 
-    # Creer les metriques (30 jours par utilisateur)
     metriques = []
     today = datetime.now().date()
     for _, row_id in df_ids.iterrows():
@@ -202,16 +212,54 @@ def etl_utilisateurs_metriques(engine):
     return {"dataset": "gym_cleaned.csv", "utilisateurs": nb_users, "metriques": nb_m, "statut": "succes"}
 
 # =============================================================
-# ETL 3 — EXERCICES (exercises.json)
+# ETL 3 — EXERCICES (RapidAPI ExerciseDB)
+# https://rapidapi.com/justin-WFnsXH_t6/api/exercisedb
 # =============================================================
-def etl_exercices(engine):
+def etl_exercices_api(engine):
     logger.info("=" * 50)
-    logger.info("ETL 3 — Exercices (exercises.json)")
+    logger.info("ETL 3 — Exercices (RapidAPI ExerciseDB)")
 
-    df = lire_fichier("exercises.json")
-    if df is None:
-        return {"dataset": "exercices", "statut": "erreur", "message": "fichier exercises.json absent"}
+    headers = {
+        "X-RapidAPI-Key":  RAPIDAPI_KEY,
+        "X-RapidAPI-Host": RAPIDAPI_HOST
+    }
 
+    # Recuperation des exercices (limit=100 pour rester dans le quota gratuit)
+    logger.info(f"Appel RapidAPI : {RAPIDAPI_URL}?limit=100&offset=0")
+    try:
+        response = requests.get(
+            RAPIDAPI_URL,
+            headers=headers,
+            params={"limit": "100", "offset": "0"},
+            timeout=30
+        )
+        response.raise_for_status()
+        exercises = response.json()
+
+        if not isinstance(exercises, list):
+            logger.error(f"Format inattendu : {type(exercises)}")
+            return {"dataset": "RapidAPI ExerciseDB", "statut": "erreur", "message": "format inattendu"}
+
+        logger.info(f"RapidAPI OK — {len(exercises)} exercices recus")
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"Erreur HTTP RapidAPI : {e}")
+        if response.status_code == 429:
+            logger.error("Quota depasse (429) — attendez demain ou utilisez exercises.json")
+        return {"dataset": "RapidAPI ExerciseDB", "statut": "erreur", "message": str(e)}
+    except requests.exceptions.Timeout:
+        logger.error("Timeout RapidAPI.")
+        return {"dataset": "RapidAPI ExerciseDB", "statut": "erreur", "message": "timeout"}
+    except Exception as e:
+        logger.error(f"Erreur RapidAPI : {e}")
+        return {"dataset": "RapidAPI ExerciseDB", "statut": "erreur", "message": str(e)}
+
+    df = pd.DataFrame(exercises)
+    logger.info(f"Colonnes recues de l'API : {list(df.columns)}")
+
+    # Mapping colonnes RapidAPI → schema PostgreSQL
+    # RapidAPI ExerciseDB retourne : id, name, bodyPart, equipment,
+    # gifUrl, target, secondaryMuscles, instructions
     rename_map = {
         "name":         "nom",
         "bodyPart":     "type_raw",
@@ -221,31 +269,41 @@ def etl_exercices(engine):
     }
     df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
 
-    niveau_map = {"beginner": "debutant", "intermediate": "intermediaire", "expert": "avance"}
-    df["niveau"] = df.get("level", pd.Series(["beginner"] * len(df))).str.lower().map(niveau_map).fillna("debutant")
+    # Niveau — pas dans l'API RapidAPI, on met debutant par defaut
+    df["niveau"] = "debutant"
 
+    # Type exercice
     type_map = {
-        "cardio": "cardio", "chest": "musculation", "back": "musculation",
-        "shoulders": "musculation", "upper arms": "musculation", "lower arms": "musculation",
-        "upper legs": "musculation", "lower legs": "musculation", "waist": "musculation",
-        "neck": "stretching",
+        "cardio":      "cardio",
+        "chest":       "musculation",
+        "back":        "musculation",
+        "shoulders":   "musculation",
+        "upper arms":  "musculation",
+        "lower arms":  "musculation",
+        "upper legs":  "musculation",
+        "lower legs":  "musculation",
+        "waist":       "musculation",
+        "neck":        "stretching",
     }
     if "type_raw" in df.columns:
         df["type"] = df["type_raw"].str.lower().map(type_map).fillna("musculation")
     else:
         df["type"] = "musculation"
 
+    # Instructions : l'API retourne une liste → on joint en texte
     if "instructions_raw" in df.columns:
         df["instructions"] = df["instructions_raw"].apply(
-            lambda x: " ".join(x) if isinstance(x, list) else str(x)
+            lambda x: " ".join(x) if isinstance(x, list) else str(x) if pd.notna(x) else ""
         )
 
+    # Nettoyage
     df["nom"] = df["nom"].str.strip().str.title()
     df = df.drop_duplicates(subset=["nom"])
-    df["source_dataset"] = "exercisedb_json"
+    df["source_dataset"] = "rapidapi_exercisedb"
 
     cols = ["nom", "type", "niveau", "equipement", "instructions", "image_url", "source_dataset"]
-    nb = inserer(df[[c for c in cols if c in df.columns]], "exercice", engine)
+    df_insert = df[[c for c in cols if c in df.columns]]
+    nb = inserer(df_insert, "exercice", engine)
 
     # Association exercice <-> groupe musculaire
     if "target" in df.columns:
@@ -260,11 +318,23 @@ def etl_exercices(engine):
             muscle = str(row.get("target", "")).lower().strip()
             match_mu = df_mu[df_mu["nom"].str.lower() == muscle]
             if not match_mu.empty:
-                assoc.append({"exercice_id": ex_id, "muscle_id": int(match_mu.iloc[0]["id"]), "role": "principal"})
+                assoc.append({
+                    "exercice_id": ex_id,
+                    "muscle_id":   int(match_mu.iloc[0]["id"]),
+                    "role":        "principal"
+                })
         if assoc:
-            inserer(pd.DataFrame(assoc).drop_duplicates(), "exercice_muscle", engine)
+            nb_assoc = inserer(pd.DataFrame(assoc).drop_duplicates(), "exercice_muscle", engine)
+            logger.info(f"[exercice_muscle] {nb_assoc} associations inserees.")
 
-    return {"dataset": "exercises.json", "lignes_inserees": nb, "statut": "succes"}
+    return {
+        "dataset":         "RapidAPI ExerciseDB",
+        "url":             RAPIDAPI_URL,
+        "lignes_recues":   len(exercises),
+        "lignes_inserees": nb,
+        "tables_cibles":   ["exercice", "exercice_muscle"],
+        "statut":          "succes"
+    }
 
 # =============================================================
 # ETL 4 — FITNESS TRACKER (fitness_cleaned.csv)
@@ -303,7 +373,9 @@ def etl_fitness_tracker(engine):
             "source":          "kaggle_fitness_cleaned",
         })
 
-    df_m = pd.DataFrame(metriques).drop_duplicates(subset=["utilisateur_id", "date_mesure"], keep="first")
+    df_m = pd.DataFrame(metriques).drop_duplicates(
+        subset=["utilisateur_id", "date_mesure"], keep="first"
+    )
     nb = inserer(df_m, "metrique_quotidienne", engine)
     return {"dataset": "fitness_cleaned.csv", "lignes_inserees": nb, "statut": "succes"}
 
@@ -312,13 +384,15 @@ def etl_fitness_tracker(engine):
 # =============================================================
 def run_pipeline():
     start = datetime.now()
-    logger.info("Pipeline ETL HealthAI Coach v4.0 — demarrage")
+    logger.info("Pipeline ETL HealthAI Coach v5.0 — demarrage")
+    logger.info(f"Source exercices : RapidAPI ExerciseDB ({RAPIDAPI_HOST})")
     engine = get_engine()
     rapports = []
+
     for nom, fn in [
         ("ETL 1 - Aliments",        etl_aliments),
         ("ETL 2 - Utilisateurs",    etl_utilisateurs_metriques),
-        ("ETL 3 - Exercices",       etl_exercices),
+        ("ETL 3 - Exercices API",   etl_exercices_api),
         ("ETL 4 - Fitness Tracker", etl_fitness_tracker),
     ]:
         try:

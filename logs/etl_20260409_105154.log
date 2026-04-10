@@ -1,9 +1,0 @@
-2026-04-09 10:51:54 | INFO     | healthai_etl | ╔══════════════════════════════════════════╗
-2026-04-09 10:51:54 | INFO     | healthai_etl | ║   HealthAI Coach — Pipeline ETL démarré  ║
-2026-04-09 10:51:54 | INFO     | healthai_etl | ║   2026-04-09 10:51:54                      ║
-2026-04-09 10:51:54 | INFO     | healthai_etl | ╚══════════════════════════════════════════╝
-2026-04-09 10:51:54 | ERROR    | healthai_etl | Impossible de se connecter à la base : (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5432 failed: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
-
-(Background on this error at: https://sqlalche.me/e/20/e3q8)

@@ -1,0 +1,10 @@
+# Ignorer tous les fichiers de logs
+logs/
+
+# Ignorer les dossiers d'environnement virtuel Python
+venv/
+.venv/
+__pycache__/
+
+# Ignorer les fichiers de configuration sensibles (si tu en as)
+.env
